@@ -83,7 +83,7 @@ func (v Value) Num() (float64, error) {
 	}
 	x, ok := v.Value.(float64)
 	if !ok {
-		return 0, fmt.Errorf("%s: not a boolean", v.Path)
+		return 0, fmt.Errorf("%s: not a number", v.Path)
 	}
 	return x, nil
 }
