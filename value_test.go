@@ -17,24 +17,31 @@ var data = []byte(`
 
 `)
 
-func TestValueKey(t *testing.T) {
+func TestKey(t *testing.T) {
 	v := Parse(data).Key("foo")
 	assert.NilError(t, v.Err)
 	assert.DeepEqual(t, v.Path, []string{"foo"})
 	assert.DeepEqual(t, v.Value, float64(123))
 }
 
-func TestValueKeyMissing(t *testing.T) {
+func TestKeyMissing(t *testing.T) {
 	v := Parse(data).Key("non_existent_key")
 	assert.Error(t, v.Err, `key not found "non_existent_key"`)
 	assert.Check(t, len(v.Path) == 0)
 }
 
-func TestValueKeyAndIndex(t *testing.T) {
+func TestKeyAndIndex(t *testing.T) {
 	v := Parse(data).Key("bar").Index(1)
 	assert.NilError(t, v.Err)
 	assert.DeepEqual(t, v.Value, float64(2))
 	assert.DeepEqual(t, v.Path, []string{"bar", "1"})
+}
+
+func TestIsNull(t *testing.T) {
+	v := Parse(data).Key("baz")
+	isNull, err := v.IsNull()
+	assert.NilError(t, err)
+	assert.Assert(t, isNull)
 }
 
 func TestType(t *testing.T) {
