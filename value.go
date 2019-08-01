@@ -71,6 +71,9 @@ func (v Value) String() string {
 
 // Type returns the value's type
 func (v Value) Type() Type {
+	if v.Err != nil {
+		return TypeInvalid
+	}
 	if v.Value == nil {
 		return TypeNull
 	}
@@ -147,6 +150,14 @@ func (v Value) Num() (float64, error) {
 		return 0, fmt.Errorf("%s: %s: not a number", v.Type(), v.Path)
 	}
 	return x, nil
+}
+
+// IsNull returns true when the value is null
+func (v Value) IsNull() (bool, error) {
+	if v.Err != nil {
+		return false, v.Err
+	}
+	return v.Value == nil, nil
 }
 
 // Object returns the value as a map of values or an error
