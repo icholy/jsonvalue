@@ -1,4 +1,4 @@
-package jsonwalk
+package jsonvalue
 
 import (
 	"encoding/json"
