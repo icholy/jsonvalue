@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // Parse json data into a Value
@@ -17,14 +18,21 @@ func Parse(data []byte) Value {
 // Value is an object, array, string, number, or bool
 type Value struct {
 	Err   error
-	Path  string
+	Path  []string
 	Value interface{}
+}
+
+func (v Value) extend(key string) []string {
+	p := make([]string, len(v.Path)+1)
+	copy(p, v.Path)
+	p[len(p)-1] = key
+	return p
 }
 
 // String implements fmt.Stringer
 func (v Value) String() string {
 	if v.Err != nil {
-		return fmt.Sprintf("%s: %v", v.Path, v.Err)
+		return fmt.Sprintf("%v: %v", v.Path, v.Err)
 	}
 	return fmt.Sprint(v.Value)
 }
@@ -102,7 +110,7 @@ func (v Value) Object() (map[string]Value, error) {
 	for k, v0 := range m {
 		obj[k] = Value{
 			Value: v0,
-			Path:  fmt.Sprintf("%s[%q]", v.Path, k),
+			Path:  v.extend(k),
 		}
 	}
 	return obj, nil
@@ -122,7 +130,7 @@ func (v Value) Array() ([]Value, error) {
 	for i, v0 := range s {
 		arr[i] = Value{
 			Value: v0,
-			Path:  fmt.Sprintf("%s[%d]", v.Path, i),
+			Path:  v.extend(strconv.Itoa(i)),
 		}
 	}
 	return arr, nil
@@ -154,28 +162,27 @@ func (v Value) Lookup(keys ...string) Value {
 
 // Key returns the value at the specified key.
 // If the value is not an object, the returned value will contain an error
-func (v Value) Key(name string) Value {
+func (v Value) Key(key string) Value {
 	if v.Err != nil {
 		return v
 	}
-	path := fmt.Sprintf("%s[%q]", v.Path, name)
 	m, ok := v.Value.(map[string]interface{})
 	if !ok {
 		return Value{
 			Err:  fmt.Errorf("not an object"),
-			Path: path,
+			Path: v.extend(key),
 		}
 	}
-	x, ok := m[name]
+	x, ok := m[key]
 	if !ok {
 		return Value{
-			Err:  fmt.Errorf("key not found %q", name),
-			Path: path,
+			Err:  fmt.Errorf("key not found %q", key),
+			Path: v.extend(key),
 		}
 	}
 	return Value{
 		Value: x,
-		Path:  path,
+		Path:  v.extend(key),
 	}
 }
 
@@ -185,22 +192,21 @@ func (v Value) Index(i int) Value {
 	if v.Err != nil {
 		return v
 	}
-	path := fmt.Sprintf("%s[%d]", v.Path, i)
 	s, ok := v.Value.([]interface{})
 	if !ok {
 		return Value{
 			Err:  fmt.Errorf("not an array"),
-			Path: path,
+			Path: v.extend(strconv.Itoa(i)),
 		}
 	}
 	if i < 0 || i >= len(s) {
 		return Value{
 			Err:  fmt.Errorf("index out of range %d", i),
-			Path: path,
+			Path: v.extend(strconv.Itoa(i)),
 		}
 	}
 	return Value{
 		Value: s[i],
-		Path:  path,
+		Path:  v.extend(strconv.Itoa(i)),
 	}
 }
