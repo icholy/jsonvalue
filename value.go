@@ -15,6 +15,37 @@ func Parse(data []byte) Value {
 	return v
 }
 
+// Type is the type of a value
+type Type int
+
+const (
+	TypeObject = Type(iota)
+	TypeArray
+	TypeNum
+	TypeStr
+	TypeBool
+	TypeNull
+	TypeInvalid
+)
+
+// String implements fmt.Stringer
+func (t Type) String() string {
+	switch t {
+	case TypeObject:
+		return "object"
+	case TypeArray:
+		return "array"
+	case TypeNum:
+		return "number"
+	case TypeStr:
+		return "string"
+	case TypeNull:
+		return "null"
+	default:
+		return "invalid"
+	}
+}
+
 // Value is an object, array, string, number, or bool
 type Value struct {
 	Err   error
@@ -22,6 +53,7 @@ type Value struct {
 	Value interface{}
 }
 
+// extend returns the path extended with the key
 func (v Value) extend(key string) []string {
 	p := make([]string, len(v.Path)+1)
 	copy(p, v.Path)
@@ -35,6 +67,27 @@ func (v Value) String() string {
 		return fmt.Sprintf("%v: %v", v.Path, v.Err)
 	}
 	return fmt.Sprint(v.Value)
+}
+
+// Type returns the value's type
+func (v Value) Type() Type {
+	if v.Value == nil {
+		return TypeNull
+	}
+	switch v.Value.(type) {
+	case float64:
+		return TypeNum
+	case bool:
+		return TypeBool
+	case string:
+		return TypeStr
+	case map[string]interface{}:
+		return TypeObject
+	case []interface{}:
+		return TypeArray
+	default:
+		return TypeInvalid
+	}
 }
 
 // Walk calls fn with all elements of value recursively.
@@ -65,7 +118,7 @@ func (v Value) Str() (string, error) {
 	}
 	s, ok := v.Value.(string)
 	if !ok {
-		return "", fmt.Errorf("%s: not a string", v.Path)
+		return "", fmt.Errorf("%s: %s: not a string", v.Type(), v.Path)
 	}
 	return s, nil
 }
@@ -78,7 +131,7 @@ func (v Value) Bool() (bool, error) {
 	}
 	b, ok := v.Value.(bool)
 	if !ok {
-		return false, fmt.Errorf("%s: not a boolean", v.Path)
+		return false, fmt.Errorf("%s: %s: not a boolean", v.Type(), v.Path)
 	}
 	return b, nil
 }
@@ -91,7 +144,7 @@ func (v Value) Num() (float64, error) {
 	}
 	x, ok := v.Value.(float64)
 	if !ok {
-		return 0, fmt.Errorf("%s: not a number", v.Path)
+		return 0, fmt.Errorf("%s: %s: not a number", v.Type(), v.Path)
 	}
 	return x, nil
 }
@@ -104,7 +157,7 @@ func (v Value) Object() (map[string]Value, error) {
 	}
 	m, ok := v.Value.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%s: not an object", v.Path)
+		return nil, fmt.Errorf("%s: %s: not an object", v.Type(), v.Path)
 	}
 	obj := map[string]Value{}
 	for k, v0 := range m {
@@ -124,7 +177,7 @@ func (v Value) Array() ([]Value, error) {
 	}
 	s, ok := v.Value.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("%s: not an array", v.Path)
+		return nil, fmt.Errorf("%s: %s: not an array", v.Type(), v.Path)
 	}
 	arr := make([]Value, len(s))
 	for i, v0 := range s {
@@ -136,17 +189,19 @@ func (v Value) Array() ([]Value, error) {
 	return arr, nil
 }
 
-// Len returns the array lenth or an error
+// Len returns the array or string lenth or an error
 // if the value is not an array
 func (v Value) Len() (int, error) {
 	if v.Err != nil {
 		return 0, v.Err
 	}
-	s, ok := v.Value.([]interface{})
-	if !ok {
-		return 0, fmt.Errorf("%s: not an array", v.Path)
+	if s, ok := v.Value.(string); ok {
+		return len(s), nil
 	}
-	return len(s), nil
+	if s, ok := v.Value.([]interface{}); ok {
+		return len(s), nil
+	}
+	return 0, fmt.Errorf("%s: %s: cannot get length", v.Type(), v.Path)
 }
 
 // Lookup is a convenience method for calling Key multiple times
@@ -169,7 +224,7 @@ func (v Value) Key(key string) Value {
 	m, ok := v.Value.(map[string]interface{})
 	if !ok {
 		return Value{
-			Err:  fmt.Errorf("not an object"),
+			Err:  fmt.Errorf("%s: not an object", v.Type()),
 			Path: v.Path,
 		}
 	}
@@ -195,7 +250,7 @@ func (v Value) Index(i int) Value {
 	s, ok := v.Value.([]interface{})
 	if !ok {
 		return Value{
-			Err:  fmt.Errorf("not an array"),
+			Err:  fmt.Errorf("%s: not an array", v.Type()),
 			Path: v.Path,
 		}
 	}
