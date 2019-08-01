@@ -170,14 +170,14 @@ func (v Value) Key(key string) Value {
 	if !ok {
 		return Value{
 			Err:  fmt.Errorf("not an object"),
-			Path: v.extend(key),
+			Path: v.Path,
 		}
 	}
 	x, ok := m[key]
 	if !ok {
 		return Value{
 			Err:  fmt.Errorf("key not found %q", key),
-			Path: v.extend(key),
+			Path: v.Path,
 		}
 	}
 	return Value{
@@ -196,13 +196,13 @@ func (v Value) Index(i int) Value {
 	if !ok {
 		return Value{
 			Err:  fmt.Errorf("not an array"),
-			Path: v.extend(strconv.Itoa(i)),
+			Path: v.Path,
 		}
 	}
 	if i < 0 || i >= len(s) {
 		return Value{
 			Err:  fmt.Errorf("index out of range %d", i),
-			Path: v.extend(strconv.Itoa(i)),
+			Path: v.Path,
 		}
 	}
 	return Value{
