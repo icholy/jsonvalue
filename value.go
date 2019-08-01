@@ -141,6 +141,17 @@ func (v Value) Len() (int, error) {
 	return len(s), nil
 }
 
+// Lookup is a convenience method for calling Key multiple times
+func (v Value) Lookup(keys ...string) Value {
+	for _, key := range keys {
+		v = v.Key(key)
+		if v.Err != nil {
+			break
+		}
+	}
+	return v
+}
+
 // Key returns the value at the specified key.
 // If the value is not an object, the returned value will contain an error
 func (v Value) Key(name string) Value {
