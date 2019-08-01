@@ -12,7 +12,8 @@ var data = []byte(`
 		"foo": 123,
 		"bar": [1, 2, 3],
 		"baz": null,
-		"poo": false
+		"poo": false,
+		"one": { "two": { "three": "hello" } }
 	}
 
 `)
@@ -42,6 +43,13 @@ func TestIsNull(t *testing.T) {
 	isNull, err := v.IsNull()
 	assert.NilError(t, err)
 	assert.Assert(t, isNull)
+}
+
+func TestLookup(t *testing.T) {
+	v := Parse(data).Lookup("one", "two", "three")
+	assert.NilError(t, v.Err)
+	assert.DeepEqual(t, v.Path, []string{"one", "two", "three"})
+	assert.DeepEqual(t, v.Value, "hello")
 }
 
 func TestType(t *testing.T) {
