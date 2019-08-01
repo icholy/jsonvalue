@@ -10,7 +10,9 @@ var data = []byte(`
 
 	{
 		"foo": 123,
-		"bar": [1, 2, 3]
+		"bar": [1, 2, 3],
+		"baz": null,
+		"poo": false
 	}
 
 `)
@@ -33,4 +35,13 @@ func TestValueKeyAndIndex(t *testing.T) {
 	assert.NilError(t, v.Err)
 	assert.DeepEqual(t, v.Value, float64(2))
 	assert.DeepEqual(t, v.Path, []string{"bar", "1"})
+}
+
+func TestType(t *testing.T) {
+	v := Parse(data)
+	assert.Equal(t, TypeObject, v.Type())
+	assert.Equal(t, TypeArray, v.Key("bar").Type())
+	assert.Equal(t, TypeNum, v.Key("bar").Index(0).Type())
+	assert.Equal(t, TypeNull, v.Key("baz").Type())
+	assert.Equal(t, TypeBool, v.Key("poo").Type())
 }
