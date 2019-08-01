@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Parse json data into a Value
 func Parse(data []byte) Value {
 	var v Value
 	if err := json.Unmarshal(data, &v.Value); err != nil {
@@ -13,12 +14,14 @@ func Parse(data []byte) Value {
 	return v
 }
 
+// Value is an object, array, string, number, or bool
 type Value struct {
 	Err   error
 	Path  string
 	Value interface{}
 }
 
+// String implements fmt.Stringer
 func (v Value) String() string {
 	if v.Err != nil {
 		return fmt.Sprintf("%s: %v", v.Path, v.Err)
@@ -26,6 +29,8 @@ func (v Value) String() string {
 	return fmt.Sprint(v.Value)
 }
 
+// Walk calls fn with all elements of value recursively.
+// When fn returns false, it doesn't recurse further.
 func (v Value) Walk(fn func(v Value) bool) {
 	if !fn(v) {
 		return
@@ -44,6 +49,8 @@ func (v Value) Walk(fn func(v Value) bool) {
 	}
 }
 
+// Str returns the value as a string or an error
+// if the value is not a string
 func (v Value) Str() (string, error) {
 	if v.Err != nil {
 		return "", v.Err
@@ -55,6 +62,8 @@ func (v Value) Str() (string, error) {
 	return s, nil
 }
 
+// Bool returns the value as a bool or an error
+// if the value is not a bool
 func (v Value) Bool() (bool, error) {
 	if v.Err != nil {
 		return false, v.Err
@@ -66,6 +75,8 @@ func (v Value) Bool() (bool, error) {
 	return b, nil
 }
 
+// Num returns the value as  a float64 or a n error
+// if the value is not a float64
 func (v Value) Num() (float64, error) {
 	if v.Err != nil {
 		return 0, v.Err
@@ -77,6 +88,8 @@ func (v Value) Num() (float64, error) {
 	return x, nil
 }
 
+// Object returns the value as a map of values or an error
+// if the value is not an object
 func (v Value) Object() (map[string]Value, error) {
 	if v.Err != nil {
 		return nil, v.Err
@@ -95,6 +108,8 @@ func (v Value) Object() (map[string]Value, error) {
 	return obj, nil
 }
 
+// Array returns the value as a slice of values or an error
+// if the value is not an array
 func (v Value) Array() ([]Value, error) {
 	if v.Err != nil {
 		return nil, v.Err
@@ -113,6 +128,21 @@ func (v Value) Array() ([]Value, error) {
 	return arr, nil
 }
 
+// Len returns the array lenth or an error
+// if the value is not an array
+func (v Value) Len() (int, error) {
+	if v.Err != nil {
+		return 0, v.Err
+	}
+	s, ok := v.Value.([]interface{})
+	if !ok {
+		return 0, fmt.Errorf("%s: not an array", v.Path)
+	}
+	return len(s), nil
+}
+
+// Key returns the value at the specified key.
+// If the value is not an object, the returned value will contain an error
 func (v Value) Key(name string) Value {
 	if v.Err != nil {
 		return v
@@ -138,6 +168,8 @@ func (v Value) Key(name string) Value {
 	}
 }
 
+// Index returns the value at the specified index.
+// If the value is not an array, the returned value will contain an error
 func (v Value) Index(i int) Value {
 	if v.Err != nil {
 		return v
@@ -160,5 +192,4 @@ func (v Value) Index(i int) Value {
 		Value: s[i],
 		Path:  path,
 	}
-
 }
